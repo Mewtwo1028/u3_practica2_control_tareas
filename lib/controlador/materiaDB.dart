@@ -18,6 +18,12 @@ class DBMateria{
         where: "IDMATERIA=?", whereArgs: [idmateria]);
   }
 
+  static Future<int> actualizar(Materia m) async {
+    Database base = await Conexion.abrirDB();
+    return base.update("MATERIA", m.toJSON(),
+        where: "IDMATERIA=?", whereArgs: [m.idmateria]);
+  }
+
   static Future<List<Materia>> mostrar() async{
     Database base = await Conexion.abrirDB();
     List<Map<String,dynamic>> resultado = await base.query("MATERIA");
