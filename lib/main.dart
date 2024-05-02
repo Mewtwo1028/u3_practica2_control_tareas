@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:u3_practica2_control_tareas/controlador/materiaDB.dart';
 import 'package:u3_practica2_control_tareas/modelo/materia.dart';
+import 'package:u3_practica2_control_tareas/modelo/tarea.dart';
 import 'controlador/conexion.dart';
 import 'modelo/MateriaTarea.dart';
+import 'package:u3_practica2_control_tareas/controlador/tareaDB.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -22,14 +24,16 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   int _indice = 0;
   List<Materia> listaMateria = [];
+  List<Tarea> listaTareas = [];
   List<MateriaTarea> listaMateriaTarea = [];
 
-@override
+  @override
   void initState() {
     // TODO: implement initState
     super.initState();
     cargarListas();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,7 +44,8 @@ class _MyAppState extends State<MyApp> {
       body: dinamico(_indice),
       bottomNavigationBar: BottomNavigationBar(
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.update), label: "Actualizar"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.update), label: "Actualizar"),
           BottomNavigationBarItem(icon: Icon(Icons.today), label: "Hoy"),
           BottomNavigationBarItem(icon: Icon(Icons.add), label: "Agregar")
         ],
@@ -57,7 +62,11 @@ class _MyAppState extends State<MyApp> {
   }
 
   Widget dinamico(int indice) {
-    return indice == 0 ? actualizar() : indice == 1 ? agenda() : agregar();
+    return indice == 0
+        ? actualizar()
+        : indice == 1
+            ? agenda()
+            : agregar();
   }
 
   Widget actualizar() {
@@ -66,7 +75,7 @@ class _MyAppState extends State<MyApp> {
       itemBuilder: (context, index) {
         return Card(
           elevation: 2,
-          margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16), // Margen de la tarjeta
+          margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           child: ListTile(
             title: Text(
               listaMateria[index].nombre,
@@ -80,16 +89,19 @@ class _MyAppState extends State<MyApp> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ActualizarMateriaForm(materia: listaMateria[index], cargarListas: cargarListas)),
+                  MaterialPageRoute(
+                      builder: (context) => ActualizarMateriaForm(
+                          materia: listaMateria[index],
+                          cargarListas: cargarListas)),
                 );
               },
-              icon: Icon(Icons.update, color: Colors.deepOrange), // Color del icono
+              icon: Icon(Icons.update, color: Colors.deepOrange),
             ),
             trailing: IconButton(
               onPressed: () {
                 vistaEliminar(listaMateria[index].idmateria);
               },
-              icon: Icon(Icons.delete, color: Colors.red), // Color del icono
+              icon: Icon(Icons.delete, color: Colors.red),
             ),
           ),
         );
@@ -100,9 +112,13 @@ class _MyAppState extends State<MyApp> {
   Widget agregar() {
     return ListView(
       children: [
-        SizedBox(height: 40,),
+        SizedBox(
+          height: 40,
+        ),
         Text("Agregar Tareas", style: TextStyle(color: Colors.deepOrange)),
-        SizedBox(height: 20,),
+        SizedBox(
+          height: 20,
+        ),
         ElevatedButton(
           onPressed: () {
             Navigator.push(
@@ -110,20 +126,27 @@ class _MyAppState extends State<MyApp> {
               MaterialPageRoute(builder: (context) => AgregarTareaForm()),
             );
           },
-          child: Text("Agregar Tarea", style: TextStyle(color: Colors.deepOrange)),
+          child:
+              Text("Agregar Tarea", style: TextStyle(color: Colors.deepOrange)),
         ),
-
-        SizedBox(height: 20,),
+        SizedBox(
+          height: 20,
+        ),
         ElevatedButton(
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => AgregarMateriaForm(cargarListas: cargarListas)),
+              MaterialPageRoute(
+                  builder: (context) =>
+                      AgregarMateriaForm(cargarListas: cargarListas)),
             );
           },
-          child: Text("Agregar Materia", style: TextStyle(color: Colors.deepOrange)),
+          child: Text("Agregar Materia",
+              style: TextStyle(color: Colors.deepOrange)),
         ),
-        SizedBox(height: 70,),
+        SizedBox(
+          height: 70,
+        ),
         InkWell(
           child: Image.asset('assets/tarea.png', height: 250),
         ),
@@ -132,13 +155,78 @@ class _MyAppState extends State<MyApp> {
   }
 
   Widget agenda() {
-    return ListView();
+    List<Tarea> tareasHoy = [];
+    List<Tarea> tareasFuturas = [];
+
+    DateTime now = DateTime.now();
+    for (Tarea tarea in listaTareas) {
+      if (tarea.f_entrega.contains(now.day.toString().padLeft(2, '0') +
+          '-' +
+          now.month.toString().padLeft(2, '0') +
+          '-' +
+          now.year.toString())) {
+        tareasHoy.add(tarea);
+      } else {
+        tareasFuturas.add(tarea);
+      }
+    }
+    tareasFuturas.sort((a, b) => a.f_entrega.compareTo(b.f_entrega));
+
+    List<Tarea> todasLasTareas = [...tareasHoy, ...tareasFuturas];
+
+    return ListView.builder(
+      itemCount: todasLasTareas.length,
+      itemBuilder: (context, index) {
+        return Card(
+          elevation: 2,
+          margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: ListTile(
+            title: Text(
+              todasLasTareas[index].descripcion,
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(todasLasTareas[index].f_entrega),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      EditarTareaForm(tarea: todasLasTareas[index]),
+                ),
+              );
+            },
+            trailing: IconButton(
+              icon: Icon(
+                Icons.check,
+                color: Colors.green,
+              ),
+              onPressed: () {
+                marcarTareaComoCompletada(todasLasTareas[index]);
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> marcarTareaComoCompletada(Tarea tarea) async {
+    int filasEliminadas = await DBTarea.eliminar(tarea.idtarea.toString());
+
+    if (filasEliminadas > 0) {
+      mensaje("Tarea completada");
+    } else {
+      mensaje("Erros al completar tarea");
+    }
+    cargarListas();
   }
 
   void cargarListas() async {
-    List<Materia> l = await DBMateria.mostrar();
+    List<Materia> lMaterias = await DBMateria.mostrar();
+    List<Tarea> lTareas = await DBTarea.mostrar();
     setState(() {
-      listaMateria = l;
+      listaMateria = lMaterias;
+      listaTareas = lTareas;
     });
   }
 
@@ -170,10 +258,35 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class AgregarTareaForm extends StatelessWidget {
+class AgregarTareaForm extends StatefulWidget {
+  @override
+  _AgregarTareaFormState createState() => _AgregarTareaFormState();
+}
+
+class _AgregarTareaFormState extends State<AgregarTareaForm> {
   final TextEditingController tareaNombre = TextEditingController();
   final TextEditingController tareaFecha = TextEditingController();
   final TextEditingController tareaDescripcion = TextEditingController();
+  String materiaPK = "";
+  bool isValidDate = false;
+  String? selectedMateria;
+  List<Materia> materias = [];
+  List<Tarea> tareas = [];
+
+  @override
+  void initState() {
+    super.initState();
+    cargarMateriasYTareas();
+  }
+
+  void cargarMateriasYTareas() async {
+    List<Materia> listaMaterias = await DBMateria.mostrar();
+    List<Tarea> listaTareas = await DBTarea.mostrar();
+    setState(() {
+      materias = listaMaterias;
+      tareas = listaTareas;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +303,7 @@ class AgregarTareaForm extends StatelessWidget {
               controller: tareaNombre,
               decoration: InputDecoration(
                 labelText: "Nombre de la tarea",
-                icon: Icon(Icons.assignment),
+                icon: Icon(Icons.assignment, color: Colors.deepOrange),
               ),
             ),
             SizedBox(height: 10),
@@ -198,28 +311,72 @@ class AgregarTareaForm extends StatelessWidget {
               controller: tareaFecha,
               decoration: InputDecoration(
                 labelText: "Fecha",
-                icon: Icon(Icons.calendar_today),
+                icon: Icon(Icons.calendar_today, color: Colors.deepOrange),
               ),
+              onChanged: (value) {
+                setState(() {
+                  isValidDate = _isValidDateFormat(value);
+                });
+              },
             ),
             SizedBox(height: 10),
             TextField(
               controller: tareaDescripcion,
               decoration: InputDecoration(
                 labelText: "Descripción",
-                icon: Icon(Icons.description),
+                icon: Icon(Icons.description, color: Colors.deepOrange),
               ),
+            ),
+            SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              value: selectedMateria,
+              decoration: InputDecoration(
+                labelText: 'Materia',
+                icon: Icon(Icons.book, color: Colors.deepOrange),
+              ),
+              items: materias.map((Materia materia) {
+                return DropdownMenuItem<String>(
+                  value: materia.nombre,
+                  child: Text(materia.nombre),
+                );
+              }).toList(),
+              onChanged: (String? value) {
+                setState(() {
+                  selectedMateria = value;
+                });
+              },
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Agregar lógica para guardar la tarea en la base de datos
-              },
+              onPressed: isValidDate && selectedMateria != null
+                  ? () {
+                      int newIdTarea = DateTime.now().millisecondsSinceEpoch;
+
+                      Tarea t = Tarea(
+                          idtarea: newIdTarea,
+                          idmateria: selectedMateria.toString(),
+                          f_entrega: tareaFecha.text,
+                          descripcion: tareaDescripcion.text);
+                      DBTarea.insertar(t).then((value) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Se insertó")));
+                        tareaDescripcion.clear();
+                        tareaFecha.clear();
+                        tareaNombre.clear();
+                      });
+                    }
+                  : null,
               child: Text("Guardar"),
             ),
           ],
         ),
       ),
     );
+  }
+
+  bool _isValidDateFormat(String input) {
+    RegExp regex = RegExp(r'^\d{2}-\d{2}-\d{4}$');
+    return regex.hasMatch(input);
   }
 }
 
@@ -242,7 +399,9 @@ class AgregarMateriaForm extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            SizedBox(height: 20,),
+            SizedBox(
+              height: 20,
+            ),
             TextField(
               controller: materiaNombre,
               decoration: InputDecoration(
@@ -250,7 +409,9 @@ class AgregarMateriaForm extends StatelessWidget {
                 icon: Icon(Icons.book, color: Colors.deepOrange),
               ),
             ),
-            SizedBox(height: 10,),
+            SizedBox(
+              height: 10,
+            ),
             TextField(
               controller: idMateria,
               decoration: InputDecoration(
@@ -258,7 +419,9 @@ class AgregarMateriaForm extends StatelessWidget {
                 icon: Icon(Icons.confirmation_number, color: Colors.deepOrange),
               ),
             ),
-            SizedBox(height: 10,),
+            SizedBox(
+              height: 10,
+            ),
             TextField(
               controller: semestreMateria,
               decoration: InputDecoration(
@@ -267,13 +430,14 @@ class AgregarMateriaForm extends StatelessWidget {
               ),
               keyboardType: TextInputType.text,
               onChanged: (value) {
-
                 if (!RegExp(r'^(AGO-DIC|ENE-JUN)\d{4}$').hasMatch(value)) {
                   Text("ERROR");
                 }
               },
             ),
-            SizedBox(height: 10,),
+            SizedBox(
+              height: 10,
+            ),
             TextField(
               controller: docenteMateria,
               decoration: InputDecoration(
@@ -281,24 +445,26 @@ class AgregarMateriaForm extends StatelessWidget {
                 icon: Icon(Icons.person, color: Colors.deepOrange),
               ),
             ),
-            SizedBox(height: 20,),
+            SizedBox(
+              height: 20,
+            ),
             ElevatedButton(
               onPressed: () {
-                Materia m = Materia (
+                Materia m = Materia(
                     idmateria: idMateria.text,
                     nombre: materiaNombre.text,
                     semestre: semestreMateria.text,
-                    docente: docenteMateria.text
-                );
+                    docente: docenteMateria.text);
 
-                DBMateria.insertar(m).then((value)  {
-
+                DBMateria.insertar(m).then((value) {
                   cargarListas();
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Se insertó")));
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text("Se insertó")));
                   idMateria.clear();
                   materiaNombre.clear();
                   semestreMateria.clear();
                   docenteMateria.clear();
+                  cargarListas();
                 });
               },
               child: Text("Guardar"),
@@ -343,7 +509,9 @@ class ActualizarMateriaForm extends StatelessWidget {
                 icon: Icon(Icons.book, color: Colors.deepOrange),
               ),
             ),
-            SizedBox(height: 10,),
+            SizedBox(
+              height: 10,
+            ),
             TextField(
               controller: semestreController,
               decoration: InputDecoration(
@@ -351,7 +519,9 @@ class ActualizarMateriaForm extends StatelessWidget {
                 icon: Icon(Icons.date_range, color: Colors.deepOrange),
               ),
             ),
-            SizedBox(height: 10,),
+            SizedBox(
+              height: 10,
+            ),
             TextField(
               controller: docenteController,
               decoration: InputDecoration(
@@ -359,10 +529,11 @@ class ActualizarMateriaForm extends StatelessWidget {
                 icon: Icon(Icons.person, color: Colors.deepOrange),
               ),
             ),
-            SizedBox(height: 20,),
+            SizedBox(
+              height: 20,
+            ),
             ElevatedButton(
               onPressed: () {
-
                 Materia materiaActualizada = Materia(
                   idmateria: materia.idmateria,
                   nombre: nombreController.text,
@@ -370,9 +541,7 @@ class ActualizarMateriaForm extends StatelessWidget {
                   docente: docenteController.text,
                 );
 
-
                 DBMateria.actualizar(materiaActualizada).then((value) {
-
                   cargarListas();
 
                   Navigator.pop(context);
@@ -387,3 +556,88 @@ class ActualizarMateriaForm extends StatelessWidget {
   }
 }
 
+class EditarTareaForm extends StatefulWidget {
+  final Tarea tarea;
+
+  const EditarTareaForm({Key? key, required this.tarea}) : super(key: key);
+
+  @override
+  _EditarTareaFormState createState() => _EditarTareaFormState();
+}
+
+class _EditarTareaFormState extends State<EditarTareaForm> {
+  late TextEditingController _descripcionController;
+  late TextEditingController _fechaController;
+
+  @override
+  void initState() {
+    super.initState();
+    _descripcionController =
+        TextEditingController(text: widget.tarea.descripcion);
+    _fechaController = TextEditingController(text: widget.tarea.f_entrega);
+  }
+
+  @override
+  void dispose() {
+    _descripcionController.dispose();
+    _fechaController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Editar Tarea'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _descripcionController,
+              decoration: InputDecoration(
+                labelText: 'Descripción',
+              ),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: _fechaController,
+              decoration: InputDecoration(
+                labelText: 'Fecha de entrega',
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                _guardarCambios();
+              },
+              child: Text('Guardar Cambios'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _guardarCambios() {
+    Tarea tareaActualizada = Tarea(
+      idtarea: widget.tarea.idtarea,
+      idmateria: widget.tarea.idmateria,
+      descripcion: _descripcionController.text,
+      f_entrega: _fechaController.text,
+    );
+
+    DBTarea.actualizar(tareaActualizada).then((value) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tarea actualizada')),
+      );
+      Navigator.pop(context);
+    }).catchError((error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al actualizar la tarea')),
+      );
+    });
+  }
+}
