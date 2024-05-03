@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:u3_practica2_control_tareas/controlador/materiaDB.dart';
 import 'package:u3_practica2_control_tareas/modelo/materia.dart';
 import 'package:u3_practica2_control_tareas/modelo/tarea.dart';
-import 'controlador/conexion.dart';
 import 'modelo/MateriaTarea.dart';
 import 'package:u3_practica2_control_tareas/controlador/tareaDB.dart';
 
@@ -39,13 +37,21 @@ class _MyAppState extends State<MyApp> {
     return Scaffold(
       backgroundColor: Color.fromRGBO(0, 53, 104, 1),
       appBar: AppBar(
-        title: Text("Control de tarea"),
+        centerTitle: true,
+        title: Text(
+          "CONTROL DE TAREAS",
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Color.fromRGBO(0, 53, 104, 1),
       ),
       body: dinamico(_indice),
       bottomNavigationBar: BottomNavigationBar(
+          backgroundColor: Colors.black,
         items: [
           BottomNavigationBarItem(
-              icon: Icon(Icons.update), label: "Actualizar"),
+              icon: Icon(Icons.update), label: "Actualizar",),
           BottomNavigationBarItem(icon: Icon(Icons.today), label: "Hoy"),
           BottomNavigationBarItem(icon: Icon(Icons.add), label: "Agregar")
         ],
@@ -70,52 +76,71 @@ class _MyAppState extends State<MyApp> {
   }
 
   Widget actualizar() {
-    return ListView.builder(
-      itemCount: listaMateria.length,
-      itemBuilder: (context, index) {
-        return Card(
-          elevation: 2,
-          margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          child: ListTile(
-            title: Text(
-              listaMateria[index].nombre,
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(
-              listaMateria[index].docente,
-              style: TextStyle(color: Colors.grey),
-            ),
-            leading: IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => ActualizarMateriaForm(
-                          materia: listaMateria[index],
-                          cargarListas: cargarListas)),
-                );
-              },
-              icon: Icon(Icons.update, color: Colors.deepOrange),
-            ),
-            trailing: IconButton(
-              onPressed: () {
-                vistaEliminar(listaMateria[index].idmateria);
-              },
-              icon: Icon(Icons.delete, color: Colors.red),
-            ),
-          ),
-        );
-      },
-    );
+    return listaMateria.isEmpty
+        ? ListView(
+            padding: EdgeInsets.fromLTRB(30, 350, 30, 0),
+            children: [
+              Text('AQUI SE MOSTRARAN TODAS LAS MATERIAS REGISTRADAS',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                  ))
+            ],
+          )
+        : ListView.builder(
+            itemCount: listaMateria.length,
+            itemBuilder: (context, index) {
+              return Card(
+                elevation: 2,
+                margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                child: ListTile(
+                  title: Text(
+                    listaMateria[index].nombre,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    listaMateria[index].docente,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  leading: IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ActualizarMateriaForm(
+                                materia: listaMateria[index],
+                                cargarListas: cargarListas)),
+                      );
+                    },
+                    icon: Icon(Icons.update, color: Colors.deepOrange),
+                  ),
+                  trailing: IconButton(
+                    onPressed: () {
+                      vistaEliminar(listaMateria[index].idmateria);
+                    },
+                    icon: Icon(Icons.delete, color: Colors.red),
+                  ),
+                ),
+              );
+            },
+          );
   }
 
   Widget agregar() {
     return ListView(
+      padding: EdgeInsets.all(30),
       children: [
+        SizedBox(
+          height: 20,
+        ),
+        InkWell(
+          child: Image.asset('assets/tarea.png', height: 100),
+        ),
         SizedBox(
           height: 40,
         ),
-        Text("Agregar Tareas", style: TextStyle(color: Colors.deepOrange)),
+        Text("Agregar Tareas", style: TextStyle(color: Colors.deepOrange, fontSize: 25), textAlign: TextAlign.center,),
         SizedBox(
           height: 20,
         ),
@@ -129,9 +154,7 @@ class _MyAppState extends State<MyApp> {
           child:
               Text("Agregar Tarea", style: TextStyle(color: Colors.deepOrange)),
         ),
-        SizedBox(
-          height: 20,
-        ),
+        SizedBox(height: 15,),
         ElevatedButton(
           onPressed: () {
             Navigator.push(
@@ -146,9 +169,6 @@ class _MyAppState extends State<MyApp> {
         ),
         SizedBox(
           height: 70,
-        ),
-        InkWell(
-          child: Image.asset('assets/tarea.png', height: 250),
         ),
       ],
     );
@@ -174,40 +194,52 @@ class _MyAppState extends State<MyApp> {
 
     List<Tarea> todasLasTareas = [...tareasHoy, ...tareasFuturas];
 
-    return ListView.builder(
-      itemCount: todasLasTareas.length,
-      itemBuilder: (context, index) {
-        return Card(
-          elevation: 2,
-          margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          child: ListTile(
-            title: Text(
-              todasLasTareas[index].descripcion,
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(todasLasTareas[index].f_entrega),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      EditarTareaForm(tarea: todasLasTareas[index]),
+    return todasLasTareas.isEmpty
+        ? ListView(
+            padding: EdgeInsets.fromLTRB(30, 350, 30, 0),
+            children: [
+              Text('AQUI SE MOSTRARAN TODAS LAS TAREAS DEL DIA REGISTRADAS',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                  ))
+            ],
+          )
+        : ListView.builder(
+            itemCount: todasLasTareas.length,
+            itemBuilder: (context, index) {
+              return Card(
+                elevation: 2,
+                margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                child: ListTile(
+                  title: Text(
+                    todasLasTareas[index].descripcion,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(todasLasTareas[index].f_entrega),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            EditarTareaForm(tarea: todasLasTareas[index]),
+                      ),
+                    );
+                  },
+                  trailing: IconButton(
+                    icon: Icon(
+                      Icons.check,
+                      color: Colors.green,
+                    ),
+                    onPressed: () {
+                      marcarTareaComoCompletada(todasLasTareas[index]);
+                    },
+                  ),
                 ),
               );
             },
-            trailing: IconButton(
-              icon: Icon(
-                Icons.check,
-                color: Colors.green,
-              ),
-              onPressed: () {
-                marcarTareaComoCompletada(todasLasTareas[index]);
-              },
-            ),
-          ),
-        );
-      },
-    );
+          );
   }
 
   Future<void> marcarTareaComoCompletada(Tarea tarea) async {
@@ -363,6 +395,7 @@ class _AgregarTareaFormState extends State<AgregarTareaForm> {
                         tareaDescripcion.clear();
                         tareaFecha.clear();
                         tareaNombre.clear();
+                        cargarMateriasYTareas();
                       });
                     }
                   : null,
