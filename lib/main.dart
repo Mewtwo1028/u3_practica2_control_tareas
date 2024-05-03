@@ -72,10 +72,11 @@ class _MyAppState extends State<MyApp> {
         ? actualizar()
         : indice == 1
             ? agenda()
-            : agregar();
+            : indice == 2 ? agregar() : agenda();
   }
 
   Widget actualizar() {
+
     return listaMateria.isEmpty
         ? ListView(
             padding: EdgeInsets.fromLTRB(30, 350, 30, 0),
@@ -177,7 +178,7 @@ class _MyAppState extends State<MyApp> {
   Widget agenda() {
     List<Tarea> tareasHoy = [];
     List<Tarea> tareasFuturas = [];
-
+    cargarListas();
     DateTime now = DateTime.now();
     for (Tarea tarea in listaTareas) {
       if (tarea.f_entrega.contains(now.day.toString().padLeft(2, '0') +
@@ -247,6 +248,7 @@ class _MyAppState extends State<MyApp> {
 
     if (filasEliminadas > 0) {
       mensaje("Tarea completada");
+      cargarListas();
     } else {
       mensaje("Erros al completar tarea");
     }
@@ -299,7 +301,6 @@ class _AgregarTareaFormState extends State<AgregarTareaForm> {
   final TextEditingController tareaNombre = TextEditingController();
   final TextEditingController tareaFecha = TextEditingController();
   final TextEditingController tareaDescripcion = TextEditingController();
-  String materiaPK = "";
   bool isValidDate = false;
   String? selectedMateria;
   List<Materia> materias = [];
@@ -342,7 +343,7 @@ class _AgregarTareaFormState extends State<AgregarTareaForm> {
             TextField(
               controller: tareaFecha,
               decoration: InputDecoration(
-                labelText: "Fecha",
+                labelText: "Fecha (DD-MM-AAAA)",
                 icon: Icon(Icons.calendar_today, color: Colors.deepOrange),
               ),
               onChanged: (value) {
@@ -396,6 +397,7 @@ class _AgregarTareaFormState extends State<AgregarTareaForm> {
                         tareaFecha.clear();
                         tareaNombre.clear();
                         cargarMateriasYTareas();
+
                       });
                     }
                   : null,
@@ -464,7 +466,8 @@ class AgregarMateriaForm extends StatelessWidget {
               keyboardType: TextInputType.text,
               onChanged: (value) {
                 if (!RegExp(r'^(AGO-DIC|ENE-JUN)\d{4}$').hasMatch(value)) {
-                  Text("ERROR");
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Formato de fecha: DD-MM-AAAA")));
+
                 }
               },
             ),
@@ -498,6 +501,7 @@ class AgregarMateriaForm extends StatelessWidget {
                   semestreMateria.clear();
                   docenteMateria.clear();
                   cargarListas();
+
                 });
               },
               child: Text("Guardar"),
